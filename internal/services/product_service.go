@@ -3,6 +3,7 @@ package services
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"go-inventory-backend/internal/models"
 )
 
@@ -26,7 +27,8 @@ func GetProducts(db *sql.DB) ([]models.Product, error) {
 }
 
 func CreateProduct(db *sql.DB, product models.Product) error {
-	_, err := db.Exec("INSERT INTO products (name,stock) Values (?,?)", product.Name, product.Stock)
+	_, err := db.Exec("INSERT INTO products (name,stock) Values (?,?)",
+		product.Name, product.Stock)
 	return err
 }
 
@@ -56,4 +58,25 @@ func DeleteProduct(db *sql.DB, id int) error {
 		return errors.New("product not found")
 	}
 	return nil
+}
+
+func GetProductsPagination(db *sql.DB, limit, offset int) ([]models.Product, error) {
+	query := fmt.Sprintf("SELECT id, name, stock FROM products LIMIT %d OFFSET %d", limit, offset)
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var products []models.Product
+	for rows.Next() {
+		var p models.Product
+		if err := rows.Scan(&p.ID, &p.Name, &p.Stock); err != nil {
+			return nil, err
+		}
+		products = append(products, p)
+	}
+
+	return products, nil
+
 }

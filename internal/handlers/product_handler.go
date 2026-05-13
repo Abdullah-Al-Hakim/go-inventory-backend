@@ -20,12 +20,37 @@ func ProductsHandler(db *sql.DB) http.HandlerFunc {
 
 		switch r.Method {
 		case http.MethodGet:
-			products, err := services.GetProducts(db)
+			page := 1
+			limit := 10
+
+			if p := r.URL.Query().Get("page"); p != "" {
+				page, _ = strconv.Atoi(p)
+			}
+			if l := r.URL.Query().Get("limit"); l != "" {
+				limit, _ = strconv.Atoi(l)
+			}
+
+			if page < 1 {
+				page = 1
+			}
+			if limit < 1 {
+				limit = 10
+			}
+
+			offset := (page - 1) * limit
+
+			products, err := services.GetProductsPagination(db, limit, offset)
+
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			json.NewEncoder(w).Encode(products)
+
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"page":  page,
+				"limit": limit,
+				"data":  products,
+			})
 
 		case http.MethodPost:
 			var product models.Product

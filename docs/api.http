@@ -1,4 +1,4 @@
-GET http://localhost:8000/products
+GET http://localhost:8000/products?page=2&limit=10
 
 ###
 
